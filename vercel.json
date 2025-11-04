@@ -1,0 +1,8 @@
+{
+  "builds": [
+    { "src": "api/calibrate.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "api/calibrate.py" }
+  ]
+}
