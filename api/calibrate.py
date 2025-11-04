@@ -1,18 +1,28 @@
 # api/calibrate.py
 from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import io
 
 app = FastAPI()
 
+# CORS for browser uploads
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+def home():
+    return {"status": "Server is running ✅"}
+
+# Handle favicon to avoid 500 crash
+@app.get("/favicon.ico")
+def favicon():
+    return PlainTextResponse("")
 
 @app.post("/calibrate")
 async def calibrate_image(
@@ -24,15 +34,14 @@ async def calibrate_image(
     try:
         contents = await file.read()
 
-        # Validate file length
+        # Handle large files gracefully
         if len(contents) > 3 * 1024 * 1024:
             return JSONResponse(status_code=400, content={"error": "File too large (>3MB)."})
 
-        # Read image safely
+        # Try to load image safely
         image = Image.open(io.BytesIO(contents))
         downsized_width, downsized_height = image.size
 
-        # Compute effective DPI and calibration
         effective_dpi = scanner_dpi * (original_width / downsized_width)
         conversion_factor = 25.4 / effective_dpi
 
